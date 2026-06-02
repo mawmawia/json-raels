@@ -31,57 +31,123 @@ export default function JSONTool() {
     setOutput(JSON.stringify(data.result, null, 2))
   }
 
-  return (
-    <div className="min-h-screen bg-[#0d1117] text-gray-200 p-4">
-      <h1 className="text-3xl font-bold">JSON Tools</h1>
-      <p className="text-gray-400 mb-4">Format, fix, query. API is $12/mo for 100k calls.</p>
+  const btnStyle = (active) => ({
+    padding: '8px 12px',
+    border: 'none',
+    borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
+    background: 'none',
+    color: active ? '#ffffff' : '#6b7280',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500
+  })
 
-      <div className="flex gap-2 mb-4 border-b border-gray-800">
+  const actionBtn = (color) => ({
+    padding: '8px 16px',
+    border: 'none',
+    borderRadius: '6px',
+    background: color,
+    color: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500
+  })
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#0d1117', 
+      color: '#e5e7eb', 
+      padding: '16px', 
+      fontFamily: 'ui-sans-serif, system-ui, sans-serif' 
+    }}>
+      <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', margin: '0 0 8px 0' }}>JSON Tools</h1>
+      <p style={{ color: '#9ca3af', marginBottom: '16px', fontSize: '14px' }}>
+        Format, fix, query. API is $12/mo for 100k calls.
+      </p>
+
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #1f2937' }}>
         {['format', 'repair', 'query'].map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-2 ${tab===t ? 'border-b-2 border-blue-500 text-white' : 'text-gray-500'}`}>
+          <button key={t} onClick={() => setTab(t)} style={btnStyle(tab === t)}>
             {t.toUpperCase()}
           </button>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <textarea
           value={input}
           onChange={e => setInput(e.target.value)}
-          className="bg-[#161b22] w-full h-96 p-3 rounded font-mono text-sm border border-gray-800"
           placeholder='{"broken": json, trailing:,}'
+          style={{ 
+            backgroundColor: '#161b22', 
+            width: '100%', 
+            height: '384px', 
+            padding: '12px', 
+            borderRadius: '6px', 
+            border: '1px solid #30363d', 
+            color: '#e5e7eb',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: '13px',
+            resize: 'none'
+          }}
         />
-        <pre className="bg-[#161b22] p-3 rounded overflow-auto h-96 border border-gray-800 text-sm">{output}</pre>
+        <pre style={{ 
+          backgroundColor: '#161b22', 
+          padding: '12px', 
+          borderRadius: '6px', 
+          overflow: 'auto', 
+          height: '384px', 
+          border: '1px solid #30363d',
+          margin: 0,
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: '13px',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-all'
+        }}>{output}</pre>
       </div>
 
       {tab === 'format' && (
-        <div className="flex gap-2 mt-4">
-          <button onClick={() => format(false)} className="bg-blue-600 px-4 py-2 rounded">Format</button>
-          <button onClick={() => format(true)} className="bg-gray-700 px-4 py-2 rounded">Minify</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => format(false)} style={actionBtn('#2563eb')}>Format</button>
+          <button onClick={() => format(true)} style={actionBtn('#4b5563')}>Minify</button>
         </div>
       )}
 
       {tab === 'repair' && (
-        <div className="mt-4">
-          <button onClick={repair} className="bg-green-600 px-4 py-2 rounded">Fix Broken JSON</button>
-          <p className="text-xs text-gray-500 mt-1">Fixes missing quotes, trailing commas, single quotes</p>
+        <div>
+          <button onClick={repair} style={actionBtn('#16a34a')}>Fix Broken JSON</button>
+          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+            Fixes missing quotes, trailing commas, single quotes
+          </p>
         </div>
       )}
 
       {tab === 'query' && (
-        <div className="mt-4 flex gap-2">
-          <input value={jsonPath} onChange={e => setJsonPath(e.target.value)}
-            className="bg-[#161b22] p-2 rounded flex-1 border border-gray-800 font-mono text-sm"
-            placeholder="$.users[?(@.age > 21)]" />
-          <button onClick={query} className="bg-purple-600 px-4 py-2 rounded">Query</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input 
+            value={jsonPath} 
+            onChange={e => setJsonPath(e.target.value)}
+            placeholder="$.users[?(@.age > 21)]"
+            style={{ 
+              backgroundColor: '#161b22', 
+              padding: '8px 12px', 
+              borderRadius: '6px', 
+              border: '1px solid #30363d',
+              color: '#e5e7eb',
+              flex: 1,
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: '13px'
+            }}
+          />
+          <button onClick={query} style={actionBtn('#9333ea')}>Query</button>
         </div>
       )}
 
-      <div className="mt-8 text-xs text-gray-500">
+      <div style={{ marginTop: '32px', fontSize: '12px', color: '#6b7280' }}>
         <p>API: POST json.raels.dev/api/format | /api/repair | /api/query</p>
-        <p>$12/mo = 100k calls. Free: 1k/mo. <a href="/pricing" className="text-blue-400">Upgrade</a></p>
+        <p>$12/mo = 100k calls. Free: 1k/mo. <a href="/pricing" style={{ color: '#3b82f6' }}>Upgrade</a></p>
       </div>
     </div>
   )
-        }
+                 }
