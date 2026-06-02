@@ -1,14 +1,26 @@
-export default function handler(req, res) {
+const usage = new Map()
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).end()
+  
+  const key = req.headers['x-api-key'] || req.headers['x-forwarded-for'] || 'anon'
+  const count = (usage.get(key) || 0) + 1
+  usage.set(key, count)
+  
+  const isPaid = req.headers['x-api-key']?.startsWith('sk_paid_')
+  if (!isPaid && count > 1000) {
+    return res.status(429).json({ 
+      error: 'Free limit: 1k calls/mo reached', 
+      upgrade: 'https://buy.stripe.com/YOUR_LINK_HERE' 
+    })
+  }
+  
   try {
     const { json, minify } = req.body
     const parsed = JSON.parse(json)
-    const result = minify? JSON.stringify(parsed) : JSON.stringify(parsed, null, 2)
-    res.status(200).json({ valid: true, result, size: result.length })
+    const result = JSON.stringify(parsed, null, minify ? 0 : 2)
+    res.status(200).json({ valid: true, result, calls: count })
   } catch (e) {
-    res.status(400).json({
-      valid: false,
-      error: e.message,
-      line: e.message.match(/position (\d+)/)?.[1] || null
-    })
+    res.status(400).json({ valid: false, error: e.message })
   }
 }
