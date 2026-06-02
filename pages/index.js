@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export default function Home() {
-  const [input, setInput] = useState(`{"name": "test", "trailing":}`)
+  const [input, setInput] = useState(`{name: 'Rael', active: yes, skills: ['ship',],}`)
   const [output, setOutput] = useState('')
   const [tab, setTab] = useState('format')
   const [path, setPath] = useState('$')
@@ -19,10 +19,19 @@ export default function Home() {
         body: JSON.stringify(body)
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'API Error')
-      setOutput(data.result || JSON.stringify(data, null, 2))
+      
+      if (!res.ok) {
+        setError(data.error || `Error: ${res.status}`)
+        return
+      }
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setOutput(data.result || JSON.stringify(data, null, 2))
+      }
     } catch (e) {
-      setError(e.message)
+      setError(`Network error: ${e.message}`)
     } finally {
       setLoading(false)
     }
@@ -42,7 +51,10 @@ export default function Home() {
       padding: '20px'
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '20px', color: '#f0f6fc' }}>JSON Tools API</h1>
+        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#f0f6fc' }}>JSON Tools API</h1>
+        <p style={{ margin: '0 0 20px 0', color: '#8b949e', fontSize: '14px' }}>
+          Format, fix, query. API is $12/mo for 100k calls.
+        </p>
         
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #30363d' }}>
           {['format', 'repair', 'query'].map(t => (
@@ -125,8 +137,12 @@ export default function Home() {
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {tab === 'format' && (
             <>
-              <button onClick={handleFormat} disabled={loading} style={btnStyle}>Format</button>
-              <button onClick={handleMinify} disabled={loading} style={btnStyle}>Minify</button>
+              <button onClick={handleFormat} disabled={loading} style={btnStyle}>
+                {loading ? 'Working...' : 'Format'}
+              </button>
+              <button onClick={handleMinify} disabled={loading} style={btnStyle}>
+                {loading ? 'Working...' : 'Minify'}
+              </button>
             </>
           )}
           {tab === 'repair' && (
@@ -143,7 +159,10 @@ export default function Home() {
 
         <div style={{ marginTop: '32px', paddingTop: '16px', borderTop: '1px solid #30363d', fontSize: '14px', color: '#8b949e' }}>
           <p style={{ margin: '4px 0' }}>API: POST json.raels.dev/api/format | /api/repair | /api/query</p>
-          <p style={{ margin: '4px 0' }}>$12/mo = 100k calls. Free: 1k/mo. <a href="#" style={{ color: '#58a6ff' }}>Upgrade</a></p>
+          <p style={{ margin: '4px 0' }}>
+            $12/mo = 100k calls. Free: 1k/mo. 
+            <a href="https://buy.stripe.com/YOUR_LINK_HERE" style={{ color: '#58a6ff', marginLeft: '8px' }}>Upgrade</a>
+          </p>
         </div>
       </div>
     </div>
@@ -159,4 +178,4 @@ const btnStyle = {
   cursor: 'pointer',
   fontSize: '14px',
   fontWeight: '600'
-                    }
+}
