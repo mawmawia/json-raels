@@ -1,41 +1,36 @@
-import { jsonrepair } from 'jsonrepair'
-
-const usage = new Map()
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
-  
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed. Use POST.' })
+  }
+
   try {
-    const ip = req.headers['x-forwarded-for'] || 'unknown'
-    const key = req.headers['x-api-key'] || ip
-    const count = (usage.get(key) || 0) + 1
-    usage.set(key, count)
+    // Get json from body
+    const { json } = req.body || {}
     
-    const isPaid = key.startsWith('sk_paid_')
-    if (!isPaid && count > 1000) {
-      return res.status(429).json({ 
-        error: 'Free limit: 1k calls/mo reached',
-        upgrade: 'https://buy.stripe.com/YOUR_LINK_HERE'
-      })
+    console.log('REPAIR API: Received json:', json)
+    
+    if (!json || typeof json !== 'string') {
+      return res.status(400).json({ error: 'Missing or invalid json field' })
     }
+
+    // Import jsonrepair
+    const { jsonrepair } = await import('jsonrepair')
     
-    let { json } = req.body
-    if (!json) return res.status(400).json({ error: 'Missing json field' })
-    
-    // Critical fix: escape newlines and other control chars
-    json = json.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
-    
+    // Repair the JSON
     const repaired = jsonrepair(json)
-    const parsed = JSON.parse(repaired)
+    console.log('REPAIR API: Repaired result:', repaired)
     
-    res.json({ 
-      result: JSON.stringify(parsed, null, 2),
-      calls: count
-    })
+    // Validate it parses
+    JSON.parse(repaired)
+    
+    // Return with key 'result' - frontend expects this exact key
+    return res.status(200).json({ result: repaired })
     
   } catch (e) {
-    res.status(400).json({ 
-      error: `Repair failed: ${e.message}`
+    console.error('REPAIR API ERROR:', e.message)
+    return res.status(400).json({ 
+      error: `Repair failed: ${e.message}` 
     })
   }
 }
