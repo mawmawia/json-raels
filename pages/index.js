@@ -4,7 +4,7 @@ export default function JSONTool() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [jsonPath, setJsonPath] = useState('$.store.book[*].author')
-  const [tab][setTab] = useState('format')
+  const [tab, setTab] = useState('format')
 
   const callAPI = async (endpoint, body) => {
     const res = await fetch(`/api/${endpoint}`, {
@@ -17,7 +17,7 @@ export default function JSONTool() {
 
   const format = async (minify) => {
     const data = await callAPI('format', { json: input, minify })
-    setOutput(data.valid? data.result : `Error: ${data.error}`)
+    setOutput(data.valid ? data.result : `Error: ${data.error}`)
   }
 
   const repair = async () => {
@@ -39,7 +39,7 @@ export default function JSONTool() {
       <div className="flex gap-2 mb-4 border-b border-gray-800">
         {['format', 'repair', 'query'].map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-2 ${tab===t? 'border-b-2 border-blue-500 text-white' : 'text-gray-500'}`}>
+            className={`px-3 py-2 ${tab===t ? 'border-b-2 border-blue-500 text-white' : 'text-gray-500'}`}>
             {t.toUpperCase()}
           </button>
         ))}
@@ -84,4 +84,4 @@ export default function JSONTool() {
       </div>
     </div>
   )
-}
+        }
