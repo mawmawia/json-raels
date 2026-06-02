@@ -1,181 +1,116 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import Head from 'next/head';
 
-export default function Home() {
-  const [input, setInput] = useState(`{name: 'Rael', active: yes, skills: ['ship',],}`)
-  const [output, setOutput] = useState('')
-  const [tab, setTab] = useState('format')
-  const [path, setPath] = useState('$')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export default function JSONTool() {
+  const [input, setInput] = useState('');
+  const [output, setOutput] = useState('');
+  const [jsonPath, setJsonPath] = useState('$.store.book[*].author');
+  const [tab, setTab] = useState('format');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const callApi = async (endpoint, body) => {
-    setLoading(true)
-    setError('')
-    setOutput('')
+  const callAPI = async (endpoint, body) => {
+    setError(null);
+    if (!body.json || body.json.trim() === '') {
+      setError('Input is empty');
+      return null;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch(`/api/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
-      })
-      const data = await res.json()
+      });
+      
+      const data = await res.json();
       
       if (!res.ok) {
-        setError(data.error || `Error: ${res.status}`)
-        return
+        throw new Error(data.error || `Error: ${res.status}`);
       }
       
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setOutput(data.result || JSON.stringify(data, null, 2))
-      }
-    } catch (e) {
-      setError(`Network error: ${e.message}`)
+      return data;
+    } catch (err) {
+      setError(err.message);
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleFormat = () => callApi('format', { json: input, minify: false })
-  const handleMinify = () => callApi('format', { json: input, minify: true })
-  const handleRepair = () => callApi('repair', { json: input })
-  const handleQuery = () => callApi('query', { json: input, path })
+  const format = async (minify) => {
+    const data = await callAPI('format', { json: input, minify });
+    if (data) setOutput(data.result);
+  };
+
+  const repair = async () => {
+    const data = await callAPI('repair', { json: input });
+    if (data) {
+      setInput(data.result);
+      setOutput(data.result);
+    }
+  };
+
+  const query = async () => {
+    const data = await callAPI('query', { json: input, path: jsonPath });
+    if (data) setOutput(JSON.stringify(data.result, null, 2));
+  };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0d1117',
-      color: '#c9d1d9',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#f0f6fc' }}>JSON Tools API</h1>
-        <p style={{ margin: '0 0 20px 0', color: '#8b949e', fontSize: '14px' }}>
-          Format, fix, query. API is $12/mo for 100k calls.
-        </p>
-        
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #30363d' }}>
+    <>
+      <Head>
+        <title>JSON Tools - Format, Fix, Query</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </Head>
+      <div className="min-h-screen bg-[#0d1117] text-gray-200 p-4">
+        <h1 className="text-3xl font-bold">JSON Tools</h1>
+        <p className="text-gray-400 mb-4">Format, fix, query. API is $12/mo for 100k calls.</p>
+
+        {error && <div className="text-red-500 mb-4 font-bold">{error}</div>}
+
+        <div className="flex gap-2 mb-4 border-b border-gray-800">
           {['format', 'repair', 'query'].map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                padding: '8px 16px',
-                background: tab === t ? '#1f6feb' : 'transparent',
-                border: 'none',
-                borderBottom: tab === t ? '2px solid #1f6feb' : '2px solid transparent',
-                color: tab === t ? '#fff' : '#8b949e',
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              {t}
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-3 py-2 ${tab === t ? 'border-b-2 border-blue-500 text-white' : 'text-gray-500'}`}>
+              {t.toUpperCase()}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="grid md:grid-cols-2 gap-4">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Paste JSON here..."
-            style={{
-              width: '100%',
-              height: '400px',
-              background: '#161b22',
-              border: '1px solid #30363d',
-              borderRadius: '6px',
-              color: '#c9d1d9',
-              padding: '12px',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-              resize: 'none'
-            }}
+            onChange={e => setInput(e.target.value)}
+            className="bg-[#161b22] w-full h-96 p-3 rounded font-mono text-sm border border-gray-800"
+            placeholder='{"broken": json, trailing:,}'
           />
-          <textarea
-            value={error || output}
-            readOnly
-            placeholder="Result..."
-            style={{
-              width: '100%',
-              height: '400px',
-              background: '#161b22',
-              border: `1px solid ${error ? '#f85149' : '#30363d'}`,
-              borderRadius: '6px',
-              color: error ? '#f85149' : '#c9d1d9',
-              padding: '12px',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-              resize: 'none'
-            }}
-          />
+          <pre className="bg-[#161b22] p-3 rounded overflow-auto h-96 border border-gray-800 text-sm">
+            {loading ? 'Processing...' : output}
+          </pre>
         </div>
 
-        {tab === 'query' && (
-          <input
-            value={path}
-            onChange={(e) => setPath(e.target.value)}
-            placeholder="JSONPath: $.store.book[*].author"
-            style={{
-              width: '100%',
-              background: '#161b22',
-              border: '1px solid #30363d',
-              borderRadius: '6px',
-              color: '#c9d1d9',
-              padding: '8px 12px',
-              fontFamily: 'monospace',
-              fontSize: '14px',
-              marginBottom: '16px'
-            }}
-          />
+        {tab === 'format' && (
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => format(false)} className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Format</button>
+            <button onClick={() => format(true)} className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">Minify</button>
+          </div>
         )}
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {tab === 'format' && (
-            <>
-              <button onClick={handleFormat} disabled={loading} style={btnStyle}>
-                {loading ? 'Working...' : 'Format'}
-              </button>
-              <button onClick={handleMinify} disabled={loading} style={btnStyle}>
-                {loading ? 'Working...' : 'Minify'}
-              </button>
-            </>
-          )}
-          {tab === 'repair' && (
-            <button onClick={handleRepair} disabled={loading} style={btnStyle}>
-              {loading ? 'Fixing...' : 'Fix Broken JSON'}
-            </button>
-          )}
-          {tab === 'query' && (
-            <button onClick={handleQuery} disabled={loading} style={btnStyle}>
-              {loading ? 'Querying...' : 'Run JSONPath'}
-            </button>
-          )}
-        </div>
+        {tab === 'repair' && (
+          <div className="mt-4">
+            <button onClick={repair} className="bg-green-600 px-4 py-2 rounded hover:bg-green-700">Fix Broken JSON</button>
+          </div>
+        )}
 
-        <div style={{ marginTop: '32px', paddingTop: '16px', borderTop: '1px solid #30363d', fontSize: '14px', color: '#8b949e' }}>
-          <p style={{ margin: '4px 0' }}>API: POST json.raels.dev/api/format | /api/repair | /api/query</p>
-          <p style={{ margin: '4px 0' }}>
-            $12/mo = 100k calls. Free: 1k/mo. 
-            <a href="https://buy.stripe.com/YOUR_LINK_HERE" style={{ color: '#58a6ff', marginLeft: '8px' }}>Upgrade</a>
-          </p>
-        </div>
+        {tab === 'query' && (
+          <div className="mt-4 flex gap-2">
+            <input value={jsonPath} onChange={e => setJsonPath(e.target.value)}
+              className="bg-[#161b22] p-2 rounded flex-1 border border-gray-800 font-mono text-sm" />
+            <button onClick={query} className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700">Query</button>
+          </div>
+        )}
       </div>
-    </div>
-  )
-}
-
-const btnStyle = {
-  padding: '8px 16px',
-  background: '#238636',
-  border: '1px solid #2ea043',
-  borderRadius: '6px',
-  color: '#fff',
-  cursor: 'pointer',
-  fontSize: '14px',
-  fontWeight: '600'
+    </>
+  );
 }
