@@ -22,8 +22,8 @@ export default async function handler(req, res) {
     let { json } = req.body
     if (!json) return res.status(400).json({ error: 'Missing json field' })
     
-    // Fix literal newlines before repair
-    json = json.replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+    // Critical fix: escape newlines and other control chars
+    json = json.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
     
     const repaired = jsonrepair(json)
     const parsed = JSON.parse(repaired)
@@ -35,8 +35,7 @@ export default async function handler(req, res) {
     
   } catch (e) {
     res.status(400).json({ 
-      error: `Repair failed: ${e.message}`,
-      hint: 'Check for unclosed quotes or invalid syntax'
+      error: `Repair failed: ${e.message}`
     })
   }
 }
