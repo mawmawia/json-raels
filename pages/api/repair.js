@@ -1,36 +1,22 @@
 export default async function handler(req, res) {
-  // Only allow POST
+  if (process.env.RAPIDAPI_SECRET && req.headers['x-rapidapi-proxy-secret'] !== process.env.RAPIDAPI_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' })
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Get json from body
-    const { json } = req.body || {}
-    
-    console.log('REPAIR API: Received json:', json)
-    
-    if (!json || typeof json !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid json field' })
-    }
+    const { json } = req.body;
+    if (!json) return res.status(400).json({ error: 'Missing json field' });
 
-    // Import jsonrepair
-    const { jsonrepair } = await import('jsonrepair')
+    const jsonrepair = await import('jsonrepair');
+    const repaired = jsonrepair.jsonrepair(json);
+    JSON.parse(repaired);
     
-    // Repair the JSON
-    const repaired = jsonrepair(json)
-    console.log('REPAIR API: Repaired result:', repaired)
-    
-    // Validate it parses
-    JSON.parse(repaired)
-    
-    // Return with key 'result' - frontend expects this exact key
-    return res.status(200).json({ result: repaired })
-    
+    return res.status(200).json({ result: repaired });
   } catch (e) {
-    console.error('REPAIR API ERROR:', e.message)
-    return res.status(400).json({ 
-      error: `Repair failed: ${e.message}` 
-    })
+    return res.status(400).json({ error: e.message });
   }
 }
